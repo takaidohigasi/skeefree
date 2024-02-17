@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/github/skeefree/go/gh"
+	"github.com/takaidohigasi/skeefree/go/gh"
 )
 
 type MigrationStatus string
