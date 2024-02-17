@@ -13,7 +13,7 @@ import (
 	"github.com/takaidohigasi/skeefree/go/util"
 
 	crpc "github.com/github/go-crpc"
-	"github.com/github/mu/kvp"
+	"github.com/uber-go/zap"
 )
 
 type showPrResponse struct {
@@ -219,7 +219,7 @@ func (app *Application) parseAndValidateRepo(ctx context.Context, r *crpc.Comman
 
 // chatopAddRepo introduces a new repo to be managed by skeefree
 func (app *Application) chatopAddRepo(ctx context.Context, r *crpc.CommandRequest) (*crpc.CommandResponse, error) {
-	app.Logger.Log(ctx, "received `add-repo` chatop", kvp.String("method", r.Method), kvp.Any("params", r.Params))
+	app.Logger.Log(ctx, "received `add-repo` chatop", zap.String("method", r.Method), zap.Any("params", r.Params))
 
 	repository, err := app.parseAndValidateRepo(ctx, r)
 	if err != nil {
@@ -238,7 +238,7 @@ func (app *Application) chatopAddRepo(ctx context.Context, r *crpc.CommandReques
 
 // chatopAddRepo introduces a new repo to be managed by skeefree
 func (app *Application) chatopUpdateRepo(ctx context.Context, r *crpc.CommandRequest) (*crpc.CommandResponse, error) {
-	app.Logger.Log(ctx, "received `update-repo` chatop", kvp.String("method", r.Method), kvp.Any("params", r.Params))
+	app.Logger.Log(ctx, "received `update-repo` chatop", zap.String("method", r.Method), zap.Any("params", r.Params))
 
 	repo, err := app.readRepository(r.Params)
 	if err != nil {
@@ -257,7 +257,7 @@ func (app *Application) chatopUpdateRepo(ctx context.Context, r *crpc.CommandReq
 
 // chatopRemoveRepo unlists a repo
 func (app *Application) chatopRemoveRepo(ctx context.Context, r *crpc.CommandRequest) (*crpc.CommandResponse, error) {
-	app.Logger.Log(ctx, "received `remove-repo` chatop", kvp.String("method", r.Method), kvp.Any("params", r.Params))
+	app.Logger.Log(ctx, "received `remove-repo` chatop", zap.String("method", r.Method), zap.Any("params", r.Params))
 
 	repo, err := app.readRepository(r.Params)
 	if err != nil {
@@ -291,7 +291,7 @@ func (app *Application) writeRepo(repo *core.Repository, buf *bytes.Buffer) erro
 
 // chatopAddRepo introduces a new repo to be managed by skeefree
 func (app *Application) chatopShowRepo(ctx context.Context, r *crpc.CommandRequest) (*crpc.CommandResponse, error) {
-	app.Logger.Log(ctx, "received `show-repo` chatop", kvp.String("method", r.Method), kvp.Any("params", r.Params))
+	app.Logger.Log(ctx, "received `show-repo` chatop", zap.String("method", r.Method), zap.Any("params", r.Params))
 
 	repo, err := app.readRepository(r.Params)
 	if err != nil {
@@ -306,7 +306,7 @@ func (app *Application) chatopShowRepo(ctx context.Context, r *crpc.CommandReque
 
 // chatopShowRepos shows details of all known repos
 func (app *Application) chatopShowRepos(ctx context.Context, r *crpc.CommandRequest) (*crpc.CommandResponse, error) {
-	app.Logger.Log(ctx, "received `show-repos` chatop", kvp.String("method", r.Method), kvp.Any("params", r.Params))
+	app.Logger.Log(ctx, "received `show-repos` chatop", zap.String("method", r.Method), zap.Any("params", r.Params))
 
 	repos, err := app.backend.ReadRepositories()
 	if err != nil {
@@ -323,7 +323,7 @@ func (app *Application) chatopShowRepos(ctx context.Context, r *crpc.CommandRequ
 
 // chatopWhichRepos lists names of all known repos
 func (app *Application) chatopWhichRepos(ctx context.Context, r *crpc.CommandRequest) (*crpc.CommandResponse, error) {
-	app.Logger.Log(ctx, "received `list-repos` chatop", kvp.String("method", r.Method), kvp.Any("params", r.Params))
+	app.Logger.Log(ctx, "received `list-repos` chatop", zap.String("method", r.Method), zap.Any("params", r.Params))
 
 	repos, err := app.backend.ReadRepositories()
 	if err != nil {
@@ -338,7 +338,7 @@ func (app *Application) chatopWhichRepos(ctx context.Context, r *crpc.CommandReq
 
 // chatopRepoMap: map a repo's skeema database to production
 func (app *Application) chatopRepoMap(ctx context.Context, r *crpc.CommandRequest) (*crpc.CommandResponse, error) {
-	app.Logger.Log(ctx, "received `repo-map` chatop", kvp.String("method", r.Method), kvp.Any("params", r.Params))
+	app.Logger.Log(ctx, "received `repo-map` chatop", zap.String("method", r.Method), zap.Any("params", r.Params))
 
 	repo, err := app.readRepository(r.Params)
 	if err != nil {
@@ -356,7 +356,7 @@ func (app *Application) chatopRepoMap(ctx context.Context, r *crpc.CommandReques
 
 // chatopRepoMap: map a repo's skeema database to production
 func (app *Application) chatopRepoUnmap(ctx context.Context, r *crpc.CommandRequest) (*crpc.CommandResponse, error) {
-	app.Logger.Log(ctx, "received `repo-unmap` chatop", kvp.String("method", r.Method), kvp.Any("params", r.Params))
+	app.Logger.Log(ctx, "received `repo-unmap` chatop", zap.String("method", r.Method), zap.Any("params", r.Params))
 
 	repo, err := app.readRepository(r.Params)
 	if err != nil {
@@ -372,7 +372,7 @@ func (app *Application) chatopRepoUnmap(ctx context.Context, r *crpc.CommandRequ
 
 // chatopRepoMap: map a repo's skeema database to production
 func (app *Application) chatopRepoAutorun(ctx context.Context, r *crpc.CommandRequest) (*crpc.CommandResponse, error) {
-	app.Logger.Log(ctx, "received `repo-autorun` chatop", kvp.String("method", r.Method), kvp.Any("params", r.Params))
+	app.Logger.Log(ctx, "received `repo-autorun` chatop", zap.String("method", r.Method), zap.Any("params", r.Params))
 
 	command := r.Params["command"]
 	autorunEnable := false
@@ -397,7 +397,7 @@ func (app *Application) chatopRepoAutorun(ctx context.Context, r *crpc.CommandRe
 
 // chatopSubmitPRByPath submits a schema change pull request
 func (app *Application) chatopForgetPR(ctx context.Context, r *crpc.CommandRequest) (*crpc.CommandResponse, error) {
-	app.Logger.Log(ctx, "received `forget-pr` chatop", kvp.String("method", r.Method), kvp.Any("params", r.Params))
+	app.Logger.Log(ctx, "received `forget-pr` chatop", zap.String("method", r.Method), zap.Any("params", r.Params))
 
 	prNumber, err := strconv.Atoi(r.Params["pr_number"])
 	if err != nil {
@@ -416,7 +416,7 @@ func (app *Application) chatopForgetPR(ctx context.Context, r *crpc.CommandReque
 
 // chatopSubmitPRByPath submits a schema change pull request
 func (app *Application) chatopPrioritizePR(ctx context.Context, r *crpc.CommandRequest) (*crpc.CommandResponse, error) {
-	app.Logger.Log(ctx, "received `prioritize-pr` chatop", kvp.String("method", r.Method), kvp.Any("params", r.Params))
+	app.Logger.Log(ctx, "received `prioritize-pr` chatop", zap.String("method", r.Method), zap.Any("params", r.Params))
 
 	pr, err := app.readPullRequest(r.Params)
 	if err != nil {
@@ -432,7 +432,7 @@ func (app *Application) chatopPrioritizePR(ctx context.Context, r *crpc.CommandR
 
 // chatopShowPR
 func (app *Application) chatopShowPR(ctx context.Context, r *crpc.CommandRequest) (*crpc.CommandResponse, error) {
-	app.Logger.Log(ctx, "received `show-pr` chatop", kvp.String("method", r.Method), kvp.Any("params", r.Params))
+	app.Logger.Log(ctx, "received `show-pr` chatop", zap.String("method", r.Method), zap.Any("params", r.Params))
 
 	pr, err := app.readPullRequest(r.Params)
 	if err != nil {
@@ -467,7 +467,7 @@ func (app *Application) chatopShowPR(ctx context.Context, r *crpc.CommandRequest
 
 // chatopsApproveAutorun
 func (app *Application) chatopsApproveAutorun(ctx context.Context, r *crpc.CommandRequest) (*crpc.CommandResponse, error) {
-	app.Logger.Log(ctx, "received `approve-autorun` chatop", kvp.String("method", r.Method), kvp.Any("params", r.Params))
+	app.Logger.Log(ctx, "received `approve-autorun` chatop", zap.String("method", r.Method), zap.Any("params", r.Params))
 
 	pr, err := app.readPullRequest(r.Params)
 	if err != nil {
@@ -501,7 +501,7 @@ func (app *Application) chatopsApproveAutorun(ctx context.Context, r *crpc.Comma
 
 // chatopsRetryMigration: given migration in `failed` status, change status to `queued`
 func (app *Application) chatopsRetryMigration(ctx context.Context, r *crpc.CommandRequest) (*crpc.CommandResponse, error) {
-	app.Logger.Log(ctx, "received `retry-migration` chatop", kvp.String("method", r.Method), kvp.Any("params", r.Params))
+	app.Logger.Log(ctx, "received `retry-migration` chatop", zap.String("method", r.Method), zap.Any("params", r.Params))
 
 	pr, err := app.readPullRequest(r.Params)
 	if err != nil {
@@ -527,7 +527,7 @@ func (app *Application) chatopsRetryMigration(ctx context.Context, r *crpc.Comma
 
 // chatopsMarkComplete: mark a migration as `complete`
 func (app *Application) chatopsMarkComplete(ctx context.Context, r *crpc.CommandRequest) (*crpc.CommandResponse, error) {
-	app.Logger.Log(ctx, "received `mark-complete` chatop", kvp.String("method", r.Method), kvp.Any("params", r.Params))
+	app.Logger.Log(ctx, "received `mark-complete` chatop", zap.String("method", r.Method), zap.Any("params", r.Params))
 
 	pr, err := app.readPullRequest(r.Params)
 	if err != nil {
@@ -553,7 +553,7 @@ func (app *Application) chatopsMarkComplete(ctx context.Context, r *crpc.Command
 
 // chatopSup
 func (app *Application) chatopSup(ctx context.Context, r *crpc.CommandRequest) (*crpc.CommandResponse, error) {
-	app.Logger.Log(ctx, "received `sup` chatop", kvp.String("method", r.Method), kvp.Any("params", r.Params))
+	app.Logger.Log(ctx, "received `sup` chatop", zap.String("method", r.Method), zap.Any("params", r.Params))
 
 	migrations, err := app.backend.ReadNonCancelledMigrations(nil)
 	if err != nil {
@@ -623,7 +623,7 @@ func (app *Application) chatopSup(ctx context.Context, r *crpc.CommandRequest) (
 
 // chatopSup
 func (app *Application) chatopStatus(ctx context.Context, r *crpc.CommandRequest) (*crpc.CommandResponse, error) {
-	app.Logger.Log(ctx, "received `status` chatop", kvp.String("method", r.Method), kvp.Any("params", r.Params))
+	app.Logger.Log(ctx, "received `status` chatop", zap.String("method", r.Method), zap.Any("params", r.Params))
 
 	migrations, err := app.backend.ReadNonCancelledMigrations(nil)
 	if err != nil {

@@ -11,7 +11,7 @@ import (
 
 	"github.com/github/go/config"
 	"github.com/github/mu"
-	"github.com/github/mu/kvp"
+	"github.com/uber-go/zap"
 	"github.com/github/mu/logger"
 )
 
@@ -70,13 +70,13 @@ func NewApplication(logger *logger.Logger) *Application {
 // required.
 func (app *Application) OnStartUp(svc *mu.Service) error {
 	for _, chatop := range app.chatops() {
-		app.Logger.Log(context.Background(), "Registering chatop", kvp.String("name", chatop.name))
+		app.Logger.Log(context.Background(), "Registering chatop", zap.String("name", chatop.name))
 
 		svc.RegisterChatopsCommand(chatop.name, chatop.help, chatop.regexp, chatop.handler)
 	}
 
 	go app.backend.ContinuousElections(func(err error) {
-		app.Logger.Log(context.Background(), "backend.ContinuousElections", kvp.Error(err))
+		app.Logger.Log(context.Background(), "backend.ContinuousElections", zap.Error(err))
 	})
 	go app.ContinuousOperations()
 

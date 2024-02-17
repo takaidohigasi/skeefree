@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/github/mu/kvp"
+	"github.com/uber-go/zap"
 	"github.com/takaidohigasi/skeefree/go/core"
 	"github.com/takaidohigasi/skeefree/go/ghapi"
 )
@@ -43,7 +43,7 @@ func (app *Application) ContinuousOperations() error {
 			{
 				go func() {
 					if err := app.StateCheck(); err != nil {
-						app.Logger.Log(ctx, "ContinuousOperations", kvp.Error(err))
+						app.Logger.Log(ctx, "ContinuousOperations", zapError(err))
 					}
 				}()
 			}
@@ -52,16 +52,16 @@ func (app *Application) ContinuousOperations() error {
 				if app.IsLeader() {
 					go func() {
 						if err := app.detectApprovedPRs(ctx); err != nil {
-							app.Logger.Log(ctx, "detectApprovedPRs", kvp.Error(err))
+							app.Logger.Log(ctx, "detectApprovedPRs", zapError(err))
 						}
 					}()
 					go func() {
 						if err := app.probeKnownOpenPRs(ctx); err != nil {
-							app.Logger.Log(ctx, "probeKnownOpenPRs", kvp.Error(err))
+							app.Logger.Log(ctx, "probeKnownOpenPRs", zapError(err))
 						}
 						// The following should be sequential to the above, otherwise they run into a race condition.
 						if err := app.detectAndMarkCompletedPRs(ctx); err != nil {
-							app.Logger.Log(ctx, "detectAndMarkCompletedPRs", kvp.Error(err))
+							app.Logger.Log(ctx, "detectAndMarkCompletedPRs", zapError(err))
 						}
 					}()
 				}
@@ -71,28 +71,28 @@ func (app *Application) ContinuousOperations() error {
 				if app.IsLeader() {
 					go func() {
 						if err := app.scheduler.scheduleNextDirectMigrations(ctx); err != nil {
-							app.Logger.Log(ctx, "scheduleNextDirectMigrations", kvp.Error(err))
+							app.Logger.Log(ctx, "scheduleNextDirectMigrations", zapError(err))
 						}
 					}()
 					go func() {
 						if err := app.scheduler.scheduleNextGhostMigration(ctx); err != nil {
-							app.Logger.Log(ctx, "scheduleNextGhostMigration", kvp.Error(err))
+							app.Logger.Log(ctx, "scheduleNextGhostMigration", zapError(err))
 						}
 					}()
 					go func() {
 						if err := app.backend.ExpireStaleMigrations(core.MigrationStatusReady, core.MigrationStatusReady, staleMigrationMinutes); err != nil {
-							app.Logger.Log(ctx, "ExpireStaleMigrations", kvp.Error(err))
+							app.Logger.Log(ctx, "ExpireStaleMigrations", zapError(err))
 						}
 						if err := app.backend.ExpireStaleMigrations(core.MigrationStatusRunning, core.MigrationStatusFailed, staleMigrationMinutes); err != nil {
-							app.Logger.Log(ctx, "ExpireStaleMigrations", kvp.Error(err))
+							app.Logger.Log(ctx, "ExpireStaleMigrations", zapError(err))
 						}
 						if err := app.backend.ExpireStaleMigrations(core.MigrationStatusComplete, core.MigrationStatusComplete, staleMigrationMinutes); err != nil {
 							// double-ensure cleanup of token
-							app.Logger.Log(ctx, "ExpireStaleMigrations", kvp.Error(err))
+							app.Logger.Log(ctx, "ExpireStaleMigrations", zapError(err))
 						}
 						if err := app.backend.ExpireStaleMigrations(core.MigrationStatusFailed, core.MigrationStatusFailed, staleMigrationMinutes); err != nil {
 							// double-ensure cleanup of token
-							app.Logger.Log(ctx, "ExpireStaleMigrations", kvp.Error(err))
+							app.Logger.Log(ctx, "ExpireStaleMigrations", zapError(err))
 						}
 					}()
 
@@ -109,7 +109,7 @@ func (app *Application) ContinuousOperations() error {
 								// running
 								comment := fmt.Sprintf("`skeefree` is running `%s` on `%s/%s` via `%s`", m.Canonical, m.Cluster.Name, m.Repo.MySQLSchema, m.Cluster.RWName)
 								if _, err := app.ghAPI.AddPullRequestComment(ctx, m.PR.Org, m.PR.Repo, m.PR.Number, comment); err != nil {
-									app.Logger.Log(ctx, "applyNextMigration", kvp.Error(err))
+									app.Logger.Log(ctx, "applyNextMigration", zapError(err))
 								}
 							}, func(m *core.Migration) {
 								// complete
@@ -119,7 +119,7 @@ func (app *Application) ContinuousOperations() error {
 								app.commentMigrationFailed(ctx, m)
 							})
 						if err != nil {
-							app.Logger.Log(ctx, "applyNextMigration", kvp.Error(err))
+							app.Logger.Log(ctx, "applyNextMigration", zapError(err))
 						}
 					}()
 				}
@@ -132,7 +132,7 @@ func (app *Application) ContinuousOperations() error {
 func (app *Application) commentByCLI(ctx context.Context, migration *core.Migration, comment string) error {
 	_, err := app.ghAPI.AddPullRequestComment(ctx, migration.PR.Org, migration.PR.Repo, migration.PR.Number, comment)
 	if err != nil {
-		app.Logger.Log(ctx, "cli", kvp.Error(err))
+		app.Logger.Log(ctx, "cli", zapError(err))
 	}
 	return err
 }
@@ -166,7 +166,7 @@ func (app *Application) detectApprovedPRs(ctx context.Context) error {
 		r := repo
 		go func() {
 			if err := app.detectRepoApprovedPRs(ctx, &r); err != nil {
-				app.Logger.Log(ctx, "detectApprovedPRs", kvp.String("org", r.Org), kvp.String("repo", r.Repo), kvp.Error(err))
+				app.Logger.Log(ctx, "detectApprovedPRs", zapString("org", r.Org), zapString("repo", r.Repo), zapError(err))
 			}
 		}()
 	}
@@ -175,11 +175,11 @@ func (app *Application) detectApprovedPRs(ctx context.Context) error {
 
 func (app *Application) detectRepoApprovedPRs(ctx context.Context, repo *core.Repository) error {
 	issuesSearchResult, searchString, err := app.ghAPI.SearchSkeemaDiffUndetectedPRs(ctx, repo.OrgRepo())
-	app.Logger.Log(ctx, "detectRepoApprovedPRs", kvp.String("searchString", searchString))
+	app.Logger.Log(ctx, "detectRepoApprovedPRs", zapString("searchString", searchString))
 	if err != nil {
 		return err
 	}
-	app.Logger.Log(ctx, "detectRepoApprovedPRs", kvp.Int("detected count prs", len(issuesSearchResult.Issues)))
+	app.Logger.Log(ctx, "detectRepoApprovedPRs", zapInt("detected count prs", len(issuesSearchResult.Issues)))
 	// PRs in this array are all "undetected": have no "migration:skeefree:detected" label
 	for _, pull := range issuesSearchResult.Issues {
 		pr := core.NewPullRequestFromRepository(repo, pull.GetNumber())
@@ -187,7 +187,7 @@ func (app *Application) detectRepoApprovedPRs(ctx context.Context, repo *core.Re
 		// Reason for this double-check is that a human may accidentally remove the `migration:skeefree:detected` label.
 		if err := app.backend.ReadPR(pr); err == nil {
 			if pr.GetStatus() == core.PullRequestStatusComplete {
-				app.Logger.Log(ctx, "detectRepoApprovedPRs: silently skipping 'completed' PR", kvp.String("org", pr.Org), kvp.String("repo", pr.Repo), kvp.Int("number", pr.Number))
+				app.Logger.Log(ctx, "detectRepoApprovedPRs: silently skipping 'completed' PR", zapString("org", pr.Org), zapString("repo", pr.Repo), zapInt("number", pr.Number))
 				continue
 			}
 		}
@@ -259,10 +259,10 @@ func (app *Application) probeKnownOpenPRs(ctx context.Context) error {
 		pr := prs[j]
 
 		if err := app.probePR(ctx, &pr); err != nil {
-			app.Logger.Log(ctx, "probePR", kvp.String("org", pr.Org), kvp.String("repo", pr.Repo), kvp.Int("pr", pr.Number), kvp.Error(err))
+			app.Logger.Log(ctx, "probePR", zapString("org", pr.Org), zapString("repo", pr.Repo), zapInt("pr", pr.Number), zapError(err))
 		}
 		if err := app.analyzeDetectedPR(ctx, pr); err != nil {
-			app.Logger.Log(ctx, "probeKnownOpenPRs", kvp.String("org", pr.Org), kvp.String("repo", pr.Repo), kvp.Int("pr", pr.Number), kvp.Error(err))
+			app.Logger.Log(ctx, "probeKnownOpenPRs", zapString("org", pr.Org), zapString("repo", pr.Repo), zapInt("pr", pr.Number), zapError(err))
 		}
 	}
 	return nil
@@ -352,9 +352,9 @@ func (app *Application) evaluatePRMigration(ctx context.Context, pr core.PullReq
 	// - schema name mapping, e,g, for repos which use skeema with multiple schemas
 	// I don't see a case where both would be used.
 	for _, mapping := range repoProductionMappings {
-		app.Logger.Log(ctx, "evaluatePRMigration: mapping", kvp.String("org", pr.Org), kvp.String("repo", pr.Repo), kvp.String("hint", mapping.Hint), kvp.String("cluster", mapping.MySQLCluster), kvp.String("schema", mapping.MySQLSchema), kvp.String("FileName", skeemaDiffInfo.FileName), kvp.String("SchemaName", skeemaDiffInfo.SchemaName))
+		app.Logger.Log(ctx, "evaluatePRMigration: mapping", zapString("org", pr.Org), zapString("repo", pr.Repo), zapString("hint", mapping.Hint), zapString("cluster", mapping.MySQLCluster), zapString("schema", mapping.MySQLSchema), zapString("FileName", skeemaDiffInfo.FileName), zapString("SchemaName", skeemaDiffInfo.SchemaName))
 		if mapping.Hint == skeemaDiffInfo.FileName || mapping.Hint == skeemaDiffInfo.SchemaName {
-			app.Logger.Log(ctx, "evaluatePRMigration: mapping match", kvp.String("org", pr.Org), kvp.String("repo", pr.Repo), kvp.String("hint", mapping.Hint), kvp.String("cluster", mapping.MySQLCluster), kvp.String("schema", mapping.MySQLSchema), kvp.String("FileName", skeemaDiffInfo.FileName), kvp.String("SchemaName", skeemaDiffInfo.SchemaName))
+			app.Logger.Log(ctx, "evaluatePRMigration: mapping match", zapString("org", pr.Org), zapString("repo", pr.Repo), zapString("hint", mapping.Hint), zapString("cluster", mapping.MySQLCluster), zapString("schema", mapping.MySQLSchema), zapString("FileName", skeemaDiffInfo.FileName), zapString("SchemaName", skeemaDiffInfo.SchemaName))
 			repo.MySQLCluster = mapping.MySQLCluster
 			repo.MySQLSchema = mapping.MySQLSchema
 		}
@@ -408,17 +408,17 @@ func (app *Application) evaluatePRMigration(ctx context.Context, pr core.PullReq
 	if err != nil {
 		return err
 	}
-	app.Logger.Log(ctx, "evaluatePRMigration: submitted migrations", kvp.Int("count", int(countSubmitted)))
+	app.Logger.Log(ctx, "evaluatePRMigration: submitted migrations", zapInt("count", int(countSubmitted)))
 
 	if err := app.ghAPI.AddPullRequestLabel(ctx, pr.Org, pr.Repo, pr.Number, ghapi.MigrationDetectedLabel); err != nil {
 		return err
 	}
-	app.Logger.Log(ctx, "evaluatePRMigration: labeled", kvp.String("org", pr.Org), kvp.String("repo", pr.Repo), kvp.Int("pr", pr.Number), kvp.String("label", ghapi.MigrationDetectedLabel))
+	app.Logger.Log(ctx, "evaluatePRMigration: labeled", zapString("org", pr.Org), zapString("repo", pr.Repo), zapInt("pr", pr.Number), zapString("label", ghapi.MigrationDetectedLabel))
 	return nil
 }
 
 func (app *Application) queuePRMigrations(ctx context.Context, pr core.PullRequest) error {
-	app.Logger.Log(ctx, "queuePRMigrations", kvp.String("org", pr.Org), kvp.String("repo", pr.Repo), kvp.Int("pr", pr.Number))
+	app.Logger.Log(ctx, "queuePRMigrations", zapString("org", pr.Org), zapString("repo", pr.Repo), zapInt("pr", pr.Number))
 	app.backend.QueuePRMigrations(&pr)
 	if !pr.LabeledAsQueued {
 		if err := app.ghAPI.AddPullRequestLabel(ctx, pr.Org, pr.Repo, pr.Number, ghapi.MigrationQueuedLabel); err != nil {
@@ -429,7 +429,7 @@ func (app *Application) queuePRMigrations(ctx context.Context, pr core.PullReque
 }
 
 func (app *Application) evaluateMigrations(ctx context.Context, repo *core.Repository, pr *core.PullRequest, skeemaDiffFile string, prStatements []core.PullRequestMigrationStatement) (migrations [](*core.Migration), err error) {
-	app.Logger.Log(ctx, "SearchSkeemaDiffApprovedPRs: suggestion begin", kvp.String("org", repo.Org), kvp.String("repo", repo.Repo), kvp.Int("pr", pr.Number))
+	app.Logger.Log(ctx, "SearchSkeemaDiffApprovedPRs: suggestion begin", zapString("org", repo.Org), zapString("repo", repo.Repo), zapInt("pr", pr.Number))
 	clusterShards, err := app.sitesAPI.MySQLClusterShards(repo.MySQLCluster)
 	if err != nil {
 		return migrations, err
@@ -438,7 +438,7 @@ func (app *Application) evaluateMigrations(ctx context.Context, repo *core.Repos
 	if err != nil {
 		return migrations, err
 	}
-	app.Logger.Log(ctx, "SearchSkeemaDiffApprovedPRs: suggestion iterating", kvp.String("org", repo.Org), kvp.String("repo", repo.Repo), kvp.Int("pr", pr.Number), kvp.Int("len", len(prStatements)))
+	app.Logger.Log(ctx, "SearchSkeemaDiffApprovedPRs: suggestion iterating", zapString("org", repo.Org), zapString("repo", repo.Repo), zapInt("pr", pr.Number), zapInt("len", len(prStatements)))
 	for _, prStatement := range prStatements {
 		migrationShards := clusterShards
 		if !requiresPerShardMigrationMap[prStatement.GetMigrationType()] {
@@ -496,19 +496,19 @@ func (app *Application) detectAndMarkCompletedPRs(ctx context.Context) error {
 	for _, pr := range prs {
 		affected, err := app.backend.UpdatePRStatus(&pr, core.PullRequestStatusComplete)
 		if err != nil {
-			app.Logger.Log(ctx, "detectAndMarkCompletedPRs", kvp.String("org", pr.Org), kvp.String("repo", pr.Repo), kvp.Int("pr", pr.Number), kvp.Error(err))
+			app.Logger.Log(ctx, "detectAndMarkCompletedPRs", zapString("org", pr.Org), zapString("repo", pr.Repo), zapInt("pr", pr.Number), zapError(err))
 			continue
 		}
 		if affected == 0 {
 			continue
 		}
 
-		app.Logger.Log(ctx, "detectAndMarkCompletedPRs: updated", kvp.String("org", pr.Org), kvp.String("repo", pr.Repo), kvp.Int("pr", pr.Number), kvp.String("status", string(core.PullRequestStatusComplete)))
+		app.Logger.Log(ctx, "detectAndMarkCompletedPRs: updated", zapString("org", pr.Org), zapString("repo", pr.Repo), zapInt("pr", pr.Number), zapString("status", string(core.PullRequestStatusComplete)))
 
 		if pr.LabeledAsQueued {
 			// PR no longer queued
 			if err := app.ghAPI.RemovePullRequestLabel(ctx, pr.Org, pr.Repo, pr.Number, ghapi.MigrationQueuedLabel); err != nil {
-				app.Logger.Log(ctx, "detectAndMarkCompletedPRs", kvp.String("org", pr.Org), kvp.String("repo", pr.Repo), kvp.Int("pr", pr.Number), kvp.Error(err))
+				app.Logger.Log(ctx, "detectAndMarkCompletedPRs", zapString("org", pr.Org), zapString("repo", pr.Repo), zapInt("pr", pr.Number), zapError(err))
 			}
 		}
 
@@ -517,7 +517,7 @@ func (app *Application) detectAndMarkCompletedPRs(ctx context.Context) error {
 			comment = fmt.Sprintf("%s\n%s", comment, commentAddendum)
 		}
 		if _, err := app.ghAPI.AddPullRequestComment(ctx, pr.Org, pr.Repo, pr.Number, comment); err != nil {
-			app.Logger.Log(ctx, "detectAndMarkCompletedPRs", kvp.String("org", pr.Org), kvp.String("repo", pr.Repo), kvp.Int("pr", pr.Number), kvp.Error(err))
+			app.Logger.Log(ctx, "detectAndMarkCompletedPRs", zapString("org", pr.Org), zapString("repo", pr.Repo), zapInt("pr", pr.Number), zapError(err))
 		}
 
 	}

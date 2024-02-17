@@ -10,7 +10,7 @@ import (
 	"github.com/takaidohigasi/skeefree/go/gh"
 	"github.com/takaidohigasi/skeefree/go/util"
 
-	"github.com/github/mu/kvp"
+	"github.com/uber-go/zap"
 	"github.com/github/mu/logger"
 )
 
@@ -33,7 +33,7 @@ func NewDirectApplier(c *config.Config, logger *logger.Logger, backend *db.Backe
 }
 
 func (applier *DirectApplier) applyNextMigration(ctx context.Context, onOwned, onRunning, onComplete, onFailed func(m *core.Migration)) (migration *core.Migration, err error) {
-	applier.logger.Log(ctx, "direct-applier: applyNextMigration", kvp.String("service-id", applier.backend.ServiceId()))
+	applier.logger.Log(ctx, "direct-applier: applyNextMigration", zap.String("service-id", applier.backend.ServiceId()))
 	token := util.PrettyUniqueToken()
 	if migration, err = applier.backend.OwnReadyMigration(core.MigrationStrategyDirect, token); err != nil {
 		return migration, err
@@ -43,7 +43,7 @@ func (applier *DirectApplier) applyNextMigration(ctx context.Context, onOwned, o
 		return migration, nil
 	}
 	onOwned(migration)
-	applier.logger.Log(ctx, "direct-applier: migration owned", kvp.Any("pr", migration.PR), kvp.String("canonical", migration.Canonical), kvp.String("strategy", string(migration.Strategy)))
+	applier.logger.Log(ctx, "direct-applier: migration owned", zap.Any("pr", migration.PR), zap.String("canonical", migration.Canonical), zap.String("strategy", string(migration.Strategy)))
 	if _, err := applier.backend.UpdateMigrationStatus(migration, core.MigrationStatusReady, core.MigrationStatusRunning, core.MigrationStrategyDirect); err != nil {
 		return migration, err
 	}
@@ -51,7 +51,7 @@ func (applier *DirectApplier) applyNextMigration(ctx context.Context, onOwned, o
 	if err != nil {
 		return migration, err
 	}
-	applier.logger.Log(ctx, "direct-applier: migration cluster", kvp.Any("pr", migration.PR), kvp.String("canonical", migration.Canonical), kvp.String("cluster", migration.Cluster.Name), kvp.String("rw", migration.Cluster.RWName))
+	applier.logger.Log(ctx, "direct-applier: migration cluster", zap.Any("pr", migration.PR), zap.String("canonical", migration.Canonical), zap.String("cluster", migration.Cluster.Name), zap.String("rw", migration.Cluster.RWName))
 
 	topology, err := db.NewTopologyDB(applier.cfg, migration)
 	if err != nil {
@@ -66,7 +66,7 @@ func (applier *DirectApplier) applyNextMigration(ctx context.Context, onOwned, o
 	if readOnly {
 		return migration, fmt.Errorf("Attempt to run migration: host found to be read only for `%s/%s` via `%s`", migration.Cluster.Name, migration.Repo.MySQLSchema, migration.Cluster.RWName)
 	}
-	applier.logger.Log(ctx, "direct-applier: ping", kvp.Any("pr", migration.PR), kvp.String("canonical", migration.Canonical), kvp.Any("read_only", readOnly))
+	applier.logger.Log(ctx, "direct-applier: ping", zap.Any("pr", migration.PR), zap.String("canonical", migration.Canonical), zap.Any("read_only", readOnly))
 	// Actually run the statement:
 	if _, err := topology.Exec(migration.PRStatement.Statement); err != nil {
 		applier.backend.UpdateMigrationStatus(migration, core.MigrationStatusRunning, core.MigrationStatusFailed, core.MigrationStrategyDirect)

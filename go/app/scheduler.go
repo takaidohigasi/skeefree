@@ -8,7 +8,7 @@ import (
 	"github.com/takaidohigasi/skeefree/go/db"
 	"github.com/takaidohigasi/skeefree/go/gh"
 
-	"github.com/github/mu/kvp"
+	"github.com/uber-go/zap"
 	"github.com/github/mu/logger"
 )
 
@@ -80,7 +80,7 @@ func (scheduler *Scheduler) findPRsFulfillableByDirectMigrations(ctx context.Con
 
 func (scheduler *Scheduler) scheduleNextDirectMigrations(ctx context.Context) error {
 	strategy := core.MigrationStrategyDirect
-	scheduler.Logger.Log(ctx, "scheduler: starting", kvp.String("strategy", string(strategy)))
+	scheduler.Logger.Log(ctx, "scheduler: starting", zap.String("strategy", string(strategy)))
 	// Find a PR (priority descending) where direct migrations will complete the PR
 	migrations, err := scheduler.backend.ReadNonCancelledMigrations(nil)
 	if err != nil {
@@ -94,7 +94,7 @@ func (scheduler *Scheduler) scheduleNextDirectMigrations(ctx context.Context) er
 	// We pick a single PR (the first)
 	pr := fulfillablePRs[0]
 	rowsAffected, err := scheduler.backend.UpdatePRMigrationsStatus(pr, core.MigrationStatusQueued, core.MigrationStatusReady, strategy)
-	scheduler.Logger.Log(ctx, "scheduler: scheduled", kvp.String("pr", pr.String()), kvp.String("strategy", string(strategy)), kvp.Int("affected", int(rowsAffected)))
+	scheduler.Logger.Log(ctx, "scheduler: scheduled", zap.String("pr", pr.String()), zap.String("strategy", string(strategy)), zap.Int("affected", int(rowsAffected)))
 	return err
 }
 
@@ -143,13 +143,13 @@ func (scheduler *Scheduler) getMigrationMasterInstance(ctx context.Context, migr
 	if err := topology.Get(&masterHostname, "select @@hostname"); err != nil {
 		return instance, err
 	}
-	scheduler.Logger.Log(ctx, "getMigrationMasterInstance", kvp.String("migration", migration.Canonical), kvp.String("master_hostname", masterHostname))
+	scheduler.Logger.Log(ctx, "getMigrationMasterInstance", zap.String("migration", migration.Canonical), zap.String("master_hostname", masterHostname))
 	return scheduler.sitesAPI.GetInstance(masterHostname)
 }
 
 func (scheduler *Scheduler) scheduleNextGhostMigration(ctx context.Context) error {
 	strategy := core.MigrationStrategyGhost
-	scheduler.Logger.Log(ctx, "scheduler: starting", kvp.String("strategy", string(strategy)))
+	scheduler.Logger.Log(ctx, "scheduler: starting", zap.String("strategy", string(strategy)))
 
 	migrations, err := scheduler.backend.ReadNonCancelledMigrations(nil)
 	if err != nil {
@@ -179,7 +179,7 @@ func (scheduler *Scheduler) scheduleNextGhostMigration(ctx context.Context) erro
 			return err
 		}
 		rowsAffected, err := scheduler.backend.UpdateMigrationStatus(&migration, core.MigrationStatusQueued, core.MigrationStatusReady, strategy)
-		scheduler.Logger.Log(ctx, "scheduler: scheduled", kvp.String("pr", migration.PR.String()), kvp.String("canonical", migration.Canonical), kvp.String("strategy", string(strategy)), kvp.Int("affected", int(rowsAffected)))
+		scheduler.Logger.Log(ctx, "scheduler: scheduled", zap.String("pr", migration.PR.String()), zap.String("canonical", migration.Canonical), zap.String("strategy", string(strategy)), zap.Int("affected", int(rowsAffected)))
 		return err
 	}
 	// Got here? We've found nothing to schedule.

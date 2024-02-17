@@ -9,7 +9,7 @@ import (
 	"github.com/takaidohigasi/skeefree/go/core"
 	"github.com/takaidohigasi/skeefree/go/util"
 
-	"github.com/github/mu/kvp"
+	"github.com/uber-go/zap"
 )
 
 const (
@@ -34,7 +34,7 @@ type GhostMigration struct {
 }
 
 func (app *Application) RunCommand(ctx context.Context, command string, token string) error {
-	app.Logger.Log(ctx, "cli: running command", kvp.String("command", command))
+	app.Logger.Log(ctx, "cli: running command", zap.String("command", command))
 
 	switch command {
 	case MigrationOwn:
@@ -101,7 +101,7 @@ func (app *Application) handleMigrationOwnCommand(ctx context.Context, token str
 		return nil
 	}
 	// migration is owned!
-	app.Logger.Log(ctx, "cli: migration owned", kvp.Any("pr", migration.PR), kvp.String("canonical", migration.Canonical), kvp.String("strategy", string(migration.Strategy)))
+	app.Logger.Log(ctx, "cli: migration owned", zap.Any("pr", migration.PR), zap.String("canonical", migration.Canonical), zap.String("strategy", string(migration.Strategy)))
 
 	m := &GhostMigration{
 		Cluster:      migration.Cluster.Name,
