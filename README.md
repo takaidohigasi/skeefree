@@ -1,30 +1,27 @@
-# gh-mysql-tools
+# skeefree
 
-General purpose MySQL tools by GitHub Engineering
+Automated schema migrations for `github/*` repos
 
-### General notes
+`skeefree` is an app which collaborates with other components to achieve automated schema migration flow at GitHub. The complete flow is composed of:
 
-This repository publishes tools created and used by GitHub's Database Infrastructure team. These will be small tools/scripts/configs that we use internally at GitHub.
+- [GitHub Actions](https://github.com/features/actions): an Action runs on Pull Request to identify if and which schema changes are pending
+- [skeema](https://github.com/skeema/skeema): an open source tool, which we use to identify which schema change is pending, and generate a formal statement to transition into the new schema
+- [gh-ost](https://github.com/github/gh-ost): our online schema migration tool, which runs reliable, auditable, controllable migrations on our busy clusters
+- `skeefree`: this repo, a service (internally deployed on kubernetes) which interacts the schema changes Pull Requests (by collaborating with the Action), which supports chatops for control and visibility, and which can kick the schema change, either directly (`CREATE TABLE`, `DROP TABLE`) or indirectly (invoke `gh-ost` to run the migration).
 
-To be able to publish these tools, we strip out GitHub-specific code (e.g. integration with our chatops, monitoring etc.). We publish the tools "as is", under the MIT license, and without support. At this time we do not expect to maintain the tools on this repository, though we may periodically update them based on internal development.
-
-# The tools
-
-## gh-mysql-rewind
-
-Move MySQL back in time, decontaminate or un-split brain a MySQL server, restore it into replication chain.
-
-[Read more](rewind/)
+For more information, read [How skeefree works](docs/how.md)
 
 
-# Project status
+## Deployment
 
-This project is archived to indicate that it is not open to contributions. We expect to be updating it from time to time. We may be open to contributions at some point in the future.
+We deploy `skeefree` in two forms:
 
-# Contributing
+- A service (internally at GitHub we run this on kubernetes)
+- A binary deployed to "utility" hosts where we run `gh-ost` on. The binary helps `gh-ost` interact in the `skeefree` flow:
+  - It activates `gh-ost`
+  - And gets called by `gh-ost` via _hooks_.
 
-See [CONTRIBUTING](.github/CONTRIBUTING.md)
 
-# License
+## Docs
 
-This project is released under the [MIT LICENSE](LICENSE).
+- [Docs](docs/)
