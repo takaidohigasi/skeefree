@@ -5,9 +5,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/github/skeefree/go/config"
-	"github.com/github/skeefree/go/core"
-	"github.com/github/skeefree/go/util"
+	"github.com/takaidohigasi/skeefree/go/config"
+	"github.com/takaidohigasi/skeefree/go/core"
+	"github.com/takaidohigasi/skeefree/go/util"
 
 	"github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
