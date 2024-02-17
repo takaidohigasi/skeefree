@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/github/skeefree/go/config"
+	"github.com/takaidohigasi/skeefree/go/config"
 	"github.com/google/go-github/github"
 	"github.com/patrickmn/go-cache"
 )

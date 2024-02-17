@@ -3,7 +3,7 @@ package ghapi
 import (
 	"context"
 
-	"github.com/github/skeefree/go/config"
+	"github.com/takaidohigasi/skeefree/go/config"
 	"github.com/google/go-github/github"
 
 	"golang.org/x/oauth2"

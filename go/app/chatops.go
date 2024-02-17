@@ -8,9 +8,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/github/skeefree/go/core"
-	"github.com/github/skeefree/go/ghapi"
-	"github.com/github/skeefree/go/util"
+	"github.com/takaidohigasi/skeefree/go/core"
+	"github.com/takaidohigasi/skeefree/go/ghapi"
+	"github.com/takaidohigasi/skeefree/go/util"
 
 	crpc "github.com/github/go-crpc"
 	"github.com/github/mu/kvp"

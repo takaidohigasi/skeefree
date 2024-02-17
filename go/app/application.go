@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	skconfig "github.com/github/skeefree/go/config"
-	"github.com/github/skeefree/go/db"
-	"github.com/github/skeefree/go/gh"
-	"github.com/github/skeefree/go/ghapi"
+	skconfig "github.com/takaidohigasi/skeefree/go/config"
+	"github.com/takaidohigasi/skeefree/go/db"
+	"github.com/takaidohigasi/skeefree/go/gh"
+	"github.com/takaidohigasi/skeefree/go/ghapi"
 
 	"github.com/github/go/config"
 	"github.com/github/mu"

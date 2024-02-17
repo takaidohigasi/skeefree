@@ -14,7 +14,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/github/skeefree/go/config"
+	"github.com/takaidohigasi/skeefree/go/config"
 
 	"github.com/patrickmn/go-cache"
 )

@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/github/mu/kvp"
-	"github.com/github/skeefree/go/core"
-	"github.com/github/skeefree/go/ghapi"
+	"github.com/takaidohigasi/skeefree/go/core"
+	"github.com/takaidohigasi/skeefree/go/ghapi"
 )
 
 var (

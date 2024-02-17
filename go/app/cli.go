@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"math/rand"
 
-	"github.com/github/skeefree/go/core"
-	"github.com/github/skeefree/go/util"
+	"github.com/takaidohigasi/skeefree/go/core"
+	"github.com/takaidohigasi/skeefree/go/util"
 
 	"github.com/github/mu/kvp"
 )

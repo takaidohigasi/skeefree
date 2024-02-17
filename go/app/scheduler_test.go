@@ -2,7 +2,7 @@ package app
 
 import (
 	"context"
-	"github.com/github/skeefree/go/core"
+	"github.com/takaidohigasi/skeefree/go/core"
 	"testing"
 
 	test "github.com/openark/golib/tests"

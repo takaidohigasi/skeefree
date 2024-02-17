@@ -13,7 +13,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/github/skeefree/go/config"
+	"github.com/takaidohigasi/skeefree/go/config"
 )
 
 type Instance struct {

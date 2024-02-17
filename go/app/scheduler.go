@@ -3,10 +3,10 @@ package app
 import (
 	"context"
 
-	"github.com/github/skeefree/go/config"
-	"github.com/github/skeefree/go/core"
-	"github.com/github/skeefree/go/db"
-	"github.com/github/skeefree/go/gh"
+	"github.com/takaidohigasi/skeefree/go/config"
+	"github.com/takaidohigasi/skeefree/go/core"
+	"github.com/takaidohigasi/skeefree/go/db"
+	"github.com/takaidohigasi/skeefree/go/gh"
 
 	"github.com/github/mu/kvp"
 	"github.com/github/mu/logger"
